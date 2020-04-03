@@ -1,0 +1,7 @@
+-- SetupConfig: {}
+create transformer on CK.sUserDestroy
+as
+begin
+	inject "
+		delete from CK.tActorPhoneNumber where ActorId = @UserId;" into "PreDestroy";
+end

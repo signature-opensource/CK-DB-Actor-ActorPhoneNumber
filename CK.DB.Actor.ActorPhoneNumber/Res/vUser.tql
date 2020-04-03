@@ -1,0 +1,9 @@
+-- SetupConfig: {}
+create transformer on CK.vUser
+as 
+begin
+	add column PrimaryPhoneNumber = phoneNumbers.PhoneNumber, PrimaryPhoneNumberValTime = phoneNumbers.ValTime;
+	inject "
+		left outer join CK.tActorPhoneNumber phoneNumbers on phoneNumbers.ActorId = u.UserId and phoneNumbers.IsPrimary = 1
+	" after single {from CK.tUser u}
+end
