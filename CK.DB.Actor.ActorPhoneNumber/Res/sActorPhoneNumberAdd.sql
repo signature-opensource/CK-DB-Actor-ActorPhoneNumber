@@ -64,8 +64,9 @@ begin
 													    when @Validate = 0 then '00010101'
 													    else sysutcdatetime() 
 												    end
-		    when not matched by target then insert( ActorId, PhoneNumber, IsPrimary, ValTime ) 
-											    values( @UserOrGroupId, 
+		    when not matched by target then insert( ActorId, PrefixId, PhoneNumber, IsPrimary, ValTime ) 
+											    values( @UserOrGroupId,
+                                                        0,
 													    @PhoneNumber, 
 													    @IsPrimary, 
 													    case when @Validate is null or @Validate = 0 
