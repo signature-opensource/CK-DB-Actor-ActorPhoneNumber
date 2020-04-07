@@ -1,4 +1,4 @@
--- SetupConfig: { "Requires": "CK.sActorPhoneNumberAdd" }
+-- SetupConfig: { "Requires": [ "CK.sActorPhoneNumberAdd", "CK.vActorPhoneNumber" ] }
 --
 -- Removes a phone number.
 -- Removing an unexisting phone number is silently ignored.
@@ -22,22 +22,35 @@ begin
 	--[beginsp]
 
 	declare @IsPrimary bit;
-	select @IsPrimary = IsPrimary from CK.tActorPhoneNumber where ActorId = @UserOrGroupId and PhoneNumber = @PhoneNumber;
+    declare @PrefixId int;
+    declare @RawPhoneNumber varchar( 32 );
+	select @IsPrimary = IsPrimary, @PrefixId = PrefixId, @RawPhoneNumber = RawPhoneNumber
+    from CK.vActorPhoneNumber
+    where ActorId = @UserOrGroupId and PhoneNumber = @PhoneNumber;
+
 	if @IsPrimary is not null
 	begin
 		--<PreDelete revert />
-		delete CK.tActorPhoneNumber where ActorId = @UserOrGroupId and PhoneNumber = @PhoneNumber;
+		delete CK.tActorPhoneNumber where ActorId = @UserOrGroupId and PrefixId = @PrefixId and PhoneNumber = @RawPhoneNumber;
 		if @IsPrimary = 1
 		begin
 			declare @SetNewPrimary bit;
-			select top 1 @PhoneNumber = PhoneNumber from CK.tActorPhoneNumber where ActorId = @UserOrGroupId order by ValTime desc;
+            declare @IsPrefixed bit;
+            declare @CountryCodeId int;
+			select top 1
+                @PhoneNumber = PhoneNumber,
+                @IsPrefixed = case when PrefixId = 0 then 0 else 1 end,
+                @CountryCodeId = CountryCodeId
+            from CK.vActorPhoneNumber
+            where ActorId = @UserOrGroupId order by ValTime desc;
+
 			if @@RowCount = 1 set @SetNewPrimary = 1 else set @SetNewPrimary = 0;
 			-- Injected code here may decide to throw if @SetNewPrimary is 0
 			-- if a primary phone number must always exist ( this check may also be done in PreDelete above ).		
 			--<PreSetNewPrimary revert />
 			if @SetNewPrimary = 1
 			begin
-				exec CK.sActorPhoneNumberAdd @ActorId, @UserOrGroupId, @PhoneNumber, @IsPrimary = 1; 
+				exec CK.sActorPhoneNumberAdd @ActorId, @UserOrGroupId, @PhoneNumber, @IsPrimary = 1, @IsPrefixed = @IsPrefixed, @CountryCodeId = @CountryCodeId;
 			end
 			--<PostSetNewPrimary />
 		end

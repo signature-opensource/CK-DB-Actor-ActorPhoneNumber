@@ -92,20 +92,20 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
                 // We need a connection that stays Opened because we are playing with begin tran/rollback accross queries.
                 ctx[phoneNumbers.Database].PreOpen();
 
-                var uniquePhoneNumber = UniquePhoneNumber();
+                var uniquePhoneNumber = UniqueLocalPhoneNumber().Substring( 0, 9 );
                 var uId1 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
                 phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "1", isPrimary: false ).Should().Be( uId1, "The 1 is the primary phone number." );
-                phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber, false ).Should().Be( uId1 );
-                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ) .Should().Be( uniquePhoneNumber + "1" );
-                phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber, true ).Should().Be( uId1, "Change the primary!" );
-                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber );
+                phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", false ).Should().Be( uId1 );
+                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "1" );
+                phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", true ).Should().Be( uId1, "Change the primary!" );
+                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "0");
                 phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId1}" ).Should().Be( 2 );
 
                 var uId2 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
                 phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "2", false ).Should().Be( uId2, "The 2 is the primary phone number." );
-                phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, true ).Should().Be( uId1, "Another user => the first user id is returned and nothing is done." );
+                phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true ).Should().Be( uId1, "Another user => the first user id is returned and nothing is done." );
                 // Nothing changed for both user.
-                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber );
+                phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "0");
                 phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId2}" ).Should().Be( uniquePhoneNumber + "2" );
                 phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId2}" ).Should().Be( 1 );
 
@@ -116,17 +116,17 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
                     TestHelper.Monitor.Info( "CK.UK_CK_tActorPhoneNumber_PhoneNumber constraint found: PhoneNumber cannot be shared among users." );
                     // We cannot use the Database helpers here since the use a brand new SqlConnection each time.
                     // We must use the SqlCallContext.
-                    phoneNumbers.Invoking( m => m.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, true, avoidAmbiguousPhoneNumber:false ) ).Should().Throw<SqlDetailedException>();
+                    phoneNumbers.Invoking( m => m.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true, avoidAmbiguousPhoneNumber: false ) ).Should().Throw<SqlDetailedException>();
                     using( Util.CreateDisposableAction( () => ctx[phoneNumbers.Database].ExecuteNonQuery( new SqlCommand( "rollback;" ) ) ) )
                     {
                         ctx[phoneNumbers.Database].ExecuteNonQuery( new SqlCommand( "begin tran; alter table CK.tActorPhoneNumber drop constraint UK_CK_tActorPhoneNumber_PhoneNumber;" ) );
-                        TestWithoutUnicityConstraint( phoneNumbers, ctx, uniquePhoneNumber, uId2 );
+                        TestWithoutUnicityConstraint( phoneNumbers, ctx, uniquePhoneNumber + "0", uId2 );
                     }
                 }
                 else
                 {
                     TestHelper.Monitor.Info( "CK.UK_CK_tActorPhoneNumber_PhoneNumber constraint NOT found: PhoneNumber can be shared among users." );
-                    TestWithoutUnicityConstraint( phoneNumbers, ctx, uniquePhoneNumber, uId2 );
+                    TestWithoutUnicityConstraint( phoneNumbers, ctx, uniquePhoneNumber + "0", uId2 );
                     // We cannot test the unicity behavior here since applying the constraint will fail if current multiple phone numbers exist.
                 }
 
@@ -164,14 +164,33 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
             }
         }
 
-        static string UniquePhoneNumber()
+        [Test]
+        public void adding_and_remove_phone_number_with_prefix()
+        {
+            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
+            {
+                phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
+                        .Should().Be( DBNull.Value );
+
+                phoneNumbers.AddPhoneNumber( ctx, 1, 1, "33123456789", false, isPrefixed: true );
+                phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
+                        .Should().Be( "33123456789" );
+
+                phoneNumbers.RemovePhoneNumber( ctx, 1, 1, "33123456789" );
+                phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
+                        .Should().Be( DBNull.Value );
+            }
+        }
+
+        static string UniqueLocalPhoneNumber()
         {
             string suffix = Guid.NewGuid()
                 .ToByteArray()
                 .Take( 2 )
                 .Select( b => Convert.ToString( b, 8 ).PadLeft( 3, '0' ) )
                 .Aggregate( ( s1, s2 ) => $"{s1}{s2}" );
-            return $"33123{suffix}";
+            return $"0123{suffix}";
         }
     }
 }

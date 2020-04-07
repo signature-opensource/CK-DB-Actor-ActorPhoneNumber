@@ -17,7 +17,9 @@ create procedure CK.sActorPhoneNumberAdd
 	@PhoneNumber varchar( 32 ),
 	@IsPrimary bit,
 	@Validate bit = null,
-    @AvoidAmbiguousPhoneNumber bit = 1
+    @AvoidAmbiguousPhoneNumber bit = 1,
+    @IsPrefixed bit = null,
+    @CountryCodeId int = null
 )
 as
 begin
@@ -27,12 +29,49 @@ begin
 	if len( @PhoneNumber ) = 0 throw 50000, 'Argument.EmptyPhoneNumber', 1;
 	if @IsPrimary is null throw 50000, 'Argument.NullIsPrimary', 1;
 
+    if @IsPrefixed is null set @IsPrefixed = 0;
+    if @CountryCodeId is null set @CountryCodeId = 0;
+
 	--[beginsp]
+
+    declare @PrefixId int;
+    declare @Prefix varchar( 4 );
+    if @IsPrefixed <> 0 and @CountryCodeId = 0
+    begin
+        select top 1 @PrefixId = c.PrefixId, @Prefix = c.PhoneNumberPrefix
+        from CK.tRegionCallingCode c
+        where c.PhoneNumberPrefix = left( @PhoneNumber, len( c.PhoneNumberPrefix ) )
+        order by len( c.PhoneNumberPrefix ) desc;
+
+        if @PrefixId is null throw 50000, 'PhoneNumber.PrefixNotFound', 1;
+        set @PhoneNumber = right( @PhoneNumber, len( @PhoneNumber ) - len( @Prefix )  );
+    end
+    else if @IsPrefixed <> 0
+    begin
+        set @PrefixId = @CountryCodeId;
+        select @Prefix = r.PhoneNumberPrefix
+        from CK.tCountryCallingCode c
+            inner join CK.tRegionCallingCode r on r.PrefixId = c.RegionPrefixId
+        where c.PrefixId = @PrefixId and charindex( r.PhoneNumberPrefix, @PhoneNumber ) = 1;
+
+        if @Prefix is null throw 50000, 'PhoneNumber.PrefixNotFound', 1;
+        set @PhoneNumber = right( @PhoneNumber, len( @PhoneNumber ) - len( @Prefix )  );
+    end
+    else if @CountryCodeId <> 0
+    begin
+        if not exists( select 1 from CK.tCountryCallingCode c where c.PrefixId = @CountryCodeId )
+            throw 50000, 'PhoneNumber.UnknownCountryCodeId', 1;
+        set @PrefixId = @CountryCodeId;
+    end
+    else
+    begin
+        set @PrefixId = 0;
+    end
 
     if @AvoidAmbiguousPhoneNumber = 1
     begin
         declare @AlreadyOtherActorId int;
-        select @AlreadyOtherActorId = ActorId from CK.tActorPhoneNumber where PhoneNumber = @PhoneNumber;
+        select @AlreadyOtherActorId = ActorId from CK.tActorPhoneNumber where PrefixId = @PrefixId and PhoneNumber = @PhoneNumber;
         if @AlreadyOtherActorId is not null and @AlreadyOtherActorId <> @UserOrGroupId
         begin           
             --<AmbiguousPhoneNumberDetected />
@@ -46,19 +85,29 @@ begin
 
     if @AvoidAmbiguousPhoneNumber = 0
     begin
+	    declare @ExistingPrimaryPrefixId int;
 	    declare @ExistingPrimaryPhoneNumber varchar( 32 );
-	    select @ExistingPrimaryPhoneNumber = PhoneNumber from CK.tActorPhoneNumber where ActorId = @UserOrGroupId and IsPrimary = 1
+	    select @ExistingPrimaryPrefixId = PrefixId, @ExistingPrimaryPhoneNumber = PhoneNumber from CK.tActorPhoneNumber where ActorId = @UserOrGroupId and IsPrimary = 1
+	    declare @NewPrimaryPrefixId int;
 	    declare @NewPrimaryPhoneNumber varchar( 32 );
 	    if @ExistingPrimaryPhoneNumber is null set @IsPrimary = 1;
-	    if @IsPrimary = 1 set @NewPrimaryPhoneNumber = @PhoneNumber;
-	    else set @NewPrimaryPhoneNumber = @ExistingPrimaryPhoneNumber;
+	    if @IsPrimary = 1
+        begin
+            set @NewPrimaryPrefixId = @PrefixId;
+            set @NewPrimaryPhoneNumber = @PhoneNumber;
+        end
+	    else
+        begin
+            set @NewPrimaryPrefixId = @ExistingPrimaryPrefixId;
+            set @NewPrimaryPhoneNumber = @ExistingPrimaryPhoneNumber;
+        end;
 
 	    --<PrePhoneNumberAdd revert />
 
 	    -- Update or insert the @PhoneNumber.
 	    merge CK.tActorPhoneNumber as target
-		    using( select ActorId = @UserOrGroupId, PhoneNumber = @PhoneNumber ) 
-		    as source on source.ActorId = target.ActorId and source.PhoneNumber = target.PhoneNumber
+		    using( select ActorId = @UserOrGroupId, PrefixId = @PrefixId, PhoneNumber = @PhoneNumber ) 
+		    as source on source.ActorId = target.ActorId and source.PrefixId = target.PrefixId and source.PhoneNumber = target.PhoneNumber
 		    when matched then update set IsPrimary = @IsPrimary, 
 									     ValTime = case when @Validate is null then target.ValTime 
 													    when @Validate = 0 then '00010101'
@@ -66,7 +115,7 @@ begin
 												    end
 		    when not matched by target then insert( ActorId, PrefixId, PhoneNumber, IsPrimary, ValTime ) 
 											    values( @UserOrGroupId,
-                                                        0,
+                                                        @PrefixId,
 													    @PhoneNumber, 
 													    @IsPrimary, 
 													    case when @Validate is null or @Validate = 0 
@@ -77,13 +126,13 @@ begin
 	    -- we always reset the IsPrimary bit based on @NewPrimaryPhoneNumber or elect a new one.
 	    if @NewPrimaryPhoneNumber is null
 	    begin
-		    select top 1 @NewPrimaryPhoneNumber = PhoneNumber from CK.tActorPhoneNumber where ActorId = @UserOrGroupId order by ValTime desc;
+		    select top 1 @NewPrimaryPhoneNumber = PhoneNumber, @NewPrimaryPrefixId = PrefixId from CK.tActorPhoneNumber where ActorId = @UserOrGroupId order by ValTime desc;
 	    end
 
 	    if @NewPrimaryPhoneNumber is not null
 	    begin
 		    update CK.tActorPhoneNumber 
-			    set IsPrimary = case when PhoneNumber = @NewPrimaryPhoneNumber then 1 else 0 end 
+			    set IsPrimary = case when PhoneNumber = @NewPrimaryPhoneNumber and PrefixId = @NewPrimaryPrefixId then 1 else 0 end 
 			    where ActorId = @UserOrGroupId;
 	    end
 

@@ -47,6 +47,6 @@ create table CK.tActorPhoneNumber
 -- be associated to different actors: by deleting this unique constraint, it is possible to support
 -- such scenarii where a phone number can be shared by different actors.
 -- Here, we restrict this: by default a phone number is bound to one and only one user.
-alter table CK.tActorPhoneNumber add constraint UK_CK_tActorPhoneNumber_PhoneNumber unique nonclustered( PhoneNumber );
+alter table CK.tActorPhoneNumber add constraint UK_CK_tActorPhoneNumber_PhoneNumber unique nonclustered( PrefixId, PhoneNumber );
 
 --[endscript]

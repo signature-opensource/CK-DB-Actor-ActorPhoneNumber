@@ -9,7 +9,7 @@ namespace CK.DB.Actor.ActorPhoneNumber
         /// Adds a phone number to a user or a group and/or sets whether it is the primary one.
         /// By default <paramref name="avoidAmbiguousPhoneNumber"/>> is true so that if the phone number already exists for
         /// another user, nothing is done and the actor identifier that is bound to the existing phone number is returned.
-        /// When avoidAmbiguousPhoneNumber is false, the behavior depends on the unicity of the PhoneNumber column: if the unique key exists (the default),
+        /// When avoidAmbiguousPhoneNumber is false, the behavior depends on the unicity of the (PrefixId, PhoneNumber) columns: if the unique key exists (the default),
         /// a SqlException duplicate key error will be raised but if no unique key is defined (ie. the UK_CK_tActorPhoneNumber_PhoneNumber constraint has
         /// been dropped), the same phone number can be associated to different users.
         /// </summary>
@@ -20,12 +20,14 @@ namespace CK.DB.Actor.ActorPhoneNumber
         /// <param name="isPrimary">True to set the phone number as the user or group's primary one.</param>
         /// <param name="validate">Optionaly sets the ValTime of the phone number: true to set it to sysUtcDateTime(), false to reset it to '0001-01-01'.</param>
         /// <param name="avoidAmbiguousPhoneNumber">False to skip phone number unicity check: always attempts to add the phone number to the actor.</param>
+        /// <param name="isPrefixed">An optional value indicating whether the <paramref name="phoneNumber"/> is prefixed by a country calling code.</param>
+        /// <param name="countryCodeId">The optional country code id.</param>
         /// <returns>
         /// The <paramref name="userOrGroupId"/> or, if <paramref name="avoidAmbiguousPhoneNumber"/> is true (the default), the identifier that
         /// is already associated to the phone number.
         /// </returns>
         [SqlProcedure( "sActorPhoneNumberAdd" )]
-        public abstract int AddPhoneNumber( ISqlCallContext ctx, int actorId, int userOrGroupId, string phoneNumber, bool isPrimary, bool? validate = null, bool avoidAmbiguousPhoneNumber = true );
+        public abstract int AddPhoneNumber( ISqlCallContext ctx, int actorId, int userOrGroupId, string phoneNumber, bool isPrimary, bool? validate = null, bool avoidAmbiguousPhoneNumber = true, bool? isPrefixed = null, int? countryCodeId = null );
 
         /// <summary>
         /// Removes a phone number from the user or group's phone numbers (removing an unexisting phone number is silently ignored).
