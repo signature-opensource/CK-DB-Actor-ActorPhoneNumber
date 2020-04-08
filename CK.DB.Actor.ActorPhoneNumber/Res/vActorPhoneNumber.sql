@@ -10,8 +10,7 @@ as
         CountryCodeId = c.PrefixId,
         CountryCode = c.Iso3166Name,
         Prefix = isnull( r1.PhoneNumberPrefix, r2.PhoneNumberPrefix ),
-        PhoneNumber = case when n.PhoneNumber is null then null
-                           else concat( isnull( r1.PhoneNumberPrefix, r2.PhoneNumberPrefix ), n.PhoneNumber ) end
+        PhoneNumber = concat( isnull( r1.PhoneNumberPrefix, r2.PhoneNumberPrefix ), n.PhoneNumber )
     from CK.tActorPhoneNumber n
         left outer join CK.tRegionCallingCode r1 on r1.PrefixId = n.PrefixId
         left outer join CK.tCountryCallingCode c on c.PrefixId = n.PrefixId

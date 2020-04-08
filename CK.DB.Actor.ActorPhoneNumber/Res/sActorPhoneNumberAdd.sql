@@ -5,9 +5,9 @@
 -- By default @AvoidAmbiguousPhoneNumber is set to 1 so that if the phone number already exists for another user,
 -- nothing is done and the actor identifier that is bound to the PhoneNumber is returned in @UserOrGroupId parameter.
 --
--- When @AvoidAmbiguousPhoneNumber is 0, the behavior depends on the unicity of the PhoneNumber column:
---   - if the unique key exists (teh default), a duplicate key error will be raised.
---   - if no unique key is defined (ie. the UK_CK_tActorPhoneNumber_PhoneNumber constraint has been dropped),
+-- When @AvoidAmbiguousPhoneNumber is 0, the behavior depends on the unicity of the phone number:
+--   - if the trigger exists (the default), an error will be raised.
+--   - if no trigger is defined (ie. the TR_CK_tActorPhoneNumber_UniquePhoneNumber constraint has been dropped),
 --     the same phone number can be associated to different users.
 --
 create procedure CK.sActorPhoneNumberAdd 
@@ -19,7 +19,8 @@ create procedure CK.sActorPhoneNumberAdd
 	@Validate bit = null,
     @AvoidAmbiguousPhoneNumber bit = 1,
     @IsPrefixed bit = null,
-    @CountryCodeId int = null
+    @CountryCodeId int = null,
+    @CountryCode varchar( 2 ) = null
 )
 as
 begin
@@ -28,11 +29,18 @@ begin
 	set @PhoneNumber = rtrim( ltrim( @PhoneNumber ) );
 	if len( @PhoneNumber ) = 0 throw 50000, 'Argument.EmptyPhoneNumber', 1;
 	if @IsPrimary is null throw 50000, 'Argument.NullIsPrimary', 1;
+	if @CountryCodeId is not null and @CountryCode is not null throw 50000, 'Argument.CountryCodeIdAndCountryCodeAreMutuallyExclusive', 1;
 
     if @IsPrefixed is null set @IsPrefixed = 0;
-    if @CountryCodeId is null set @CountryCodeId = 0;
+    if @CountryCodeId is null and @CountryCode is null set @CountryCodeId = 0;
 
 	--[beginsp]
+
+    if @CountryCode is not null
+    begin
+        select @CountryCodeId = PrefixId from CK.tCountryCallingCode where Iso3166Name = @CountryCode;
+        if @CountryCodeId is null throw 50000, 'Argument.UnkownCountryCode', 1;
+    end;
 
     declare @PrefixId int;
     declare @Prefix varchar( 4 );
@@ -59,19 +67,24 @@ begin
     end
     else if @CountryCodeId <> 0
     begin
-        if not exists( select 1 from CK.tCountryCallingCode c where c.PrefixId = @CountryCodeId )
-            throw 50000, 'PhoneNumber.UnknownCountryCodeId', 1;
+        select @Prefix = r.PhoneNumberPrefix
+        from CK.tCountryCallingCode c
+            inner join CK.tRegionCallingCode r on r.PrefixId = c.RegionPrefixId
+        where c.PrefixId = @CountryCodeId;
+
+        if @Prefix is null throw 50000, 'PhoneNumber.UnknownCountryCodeId', 1;
         set @PrefixId = @CountryCodeId;
     end
     else
     begin
         set @PrefixId = 0;
+        set @Prefix = '';
     end
 
     if @AvoidAmbiguousPhoneNumber = 1
     begin
         declare @AlreadyOtherActorId int;
-        select @AlreadyOtherActorId = ActorId from CK.tActorPhoneNumber where PrefixId = @PrefixId and PhoneNumber = @PhoneNumber;
+        select @AlreadyOtherActorId = ActorId from CK.vActorPhoneNumber where coalesce( Prefix, '' ) = @Prefix and RawPhoneNumber = @PhoneNumber;
         if @AlreadyOtherActorId is not null and @AlreadyOtherActorId <> @UserOrGroupId
         begin           
             --<AmbiguousPhoneNumberDetected />
