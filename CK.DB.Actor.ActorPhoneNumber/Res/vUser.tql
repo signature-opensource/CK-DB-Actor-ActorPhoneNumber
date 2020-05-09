@@ -1,0 +1,19 @@
+-- SetupConfig: {}
+create transformer on CK.vUser
+as 
+begin
+	add column
+        PrimaryRawPhoneNumber = phoneNumbers.PhoneNumber,
+        PrimaryPhoneNumberValTime = phoneNumbers.ValTime,
+        PrimaryPhoneNumberCountryCodeId = countryCallingCode.PrefixId,
+        PrimaryPhoneNumberCountryCode = countryCallingCode.Iso3166Name,
+        PrimaryPhoneNumberPrefix = isnull( regionCallingCode1.PhoneNumberPrefix, regionCallingCode2.PhoneNumberPrefix ),
+        PrimaryPhoneNumber = case when phoneNumbers.PhoneNumber is null then null
+                                  else concat( isnull( regionCallingCode1.PhoneNumberPrefix, regionCallingCode2.PhoneNumberPrefix ), phoneNumbers.PhoneNumber ) end
+	inject "
+		left outer join CK.tActorPhoneNumber phoneNumbers on phoneNumbers.ActorId = u.UserId and phoneNumbers.IsPrimary = 1
+        left outer join CK.tRegionCallingCode regionCallingCode1 on regionCallingCode1.PrefixId = phoneNumbers.PrefixId
+        left outer join CK.tCountryCallingCode countryCallingCode on countryCallingCode.PrefixId = phoneNumbers.PrefixId
+        left outer join CK.tRegionCallingCode regionCallingCode2 on regionCallingCode2.PrefixId = countryCallingCode.RegionPrefixId
+	" after single {from CK.tUser u}
+end

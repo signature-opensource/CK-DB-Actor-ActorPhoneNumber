@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29926.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.DB.Actor.ActorPhoneNumber", "CK.DB.Actor.ActorPhoneNumber\CK.DB.Actor.ActorPhoneNumber.csproj", "{2A1C76C1-D6EE-4320-8FE1-03B9076F2EE3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{2472F470-94A5-4199-B2EE-5501C3C47BC1}"
+	ProjectSection(SolutionItems) = preProject
+		.gitignore = .gitignore
+		appveyor.yml = appveyor.yml
+		Common\CentralPackages.props = Common\CentralPackages.props
+		nuget.config = nuget.config
+		RepositoryInfo.xml = RepositoryInfo.xml
+		Common\Shared.props = Common\Shared.props
+		Common\SharedKey.snk = Common\SharedKey.snk
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3D16BD58-2710-4FF8-B732-8B43F7A8563A}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CK.DB.Actor.ActorPhoneNumber.Tests", "Tests\CK.DB.Actor.ActorPhoneNumber.Tests\CK.DB.Actor.ActorPhoneNumber.Tests.csproj", "{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CodeCakeBuilder", "CodeCakeBuilder\CodeCakeBuilder.csproj", "{E2BB0FFD-D28D-4A61-85D6-3E5AEB3F5843}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2A1C76C1-D6EE-4320-8FE1-03B9076F2EE3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2A1C76C1-D6EE-4320-8FE1-03B9076F2EE3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2A1C76C1-D6EE-4320-8FE1-03B9076F2EE3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2A1C76C1-D6EE-4320-8FE1-03B9076F2EE3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E2BB0FFD-D28D-4A61-85D6-3E5AEB3F5843}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E2BB0FFD-D28D-4A61-85D6-3E5AEB3F5843}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E2BB0FFD-D28D-4A61-85D6-3E5AEB3F5843}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E2BB0FFD-D28D-4A61-85D6-3E5AEB3F5843}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{3CB133F9-831D-4D5E-BB1F-04CCFC4D217B} = {3D16BD58-2710-4FF8-B732-8B43F7A8563A}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C4D5F263-CBB2-4D3A-9209-EDACBDB980AC}
+	EndGlobalSection
+EndGlobal
