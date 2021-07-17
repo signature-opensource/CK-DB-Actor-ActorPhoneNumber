@@ -1,7 +1,7 @@
 <Project>
   <ItemGroup>
-    <PackageReference Update="CK.DB.Actor" Version="11.1.1--0016-develop" />
-    <PackageReference Update="CK.DB.Actor.Tests" Version="11.1.1--0016-develop" />
+    <PackageReference Update="CK.DB.Actor" Version="11.1.1--0017-develop" />
+    <PackageReference Update="CK.DB.Actor.Tests" Version="11.1.1--0017-develop" />
     <PackageReference Update="Microsoft.NET.Test.Sdk" Version="16.8.3" />
     <PackageReference Update="Microsoft.SourceLink.GitHub" Version="1.0.0" />
     <PackageReference Update="NUnit" Version="3.12.0" />
