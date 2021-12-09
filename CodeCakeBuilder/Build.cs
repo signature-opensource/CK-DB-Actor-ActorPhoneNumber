@@ -1,16 +1,13 @@
 using Cake.Common.IO;
 using Cake.Core;
 using Cake.Core.Diagnostics;
-using SimpleGitVersion;
 
 namespace CodeCake
 {
 
     /// <summary>
     /// Sample build "script".
-    /// Build scripts can be decorated with AddPath attributes that inject existing paths into the PATH environment variable. 
     /// </summary>
-    
     public partial class Build : CodeCakeHost
     {
         public Build()
