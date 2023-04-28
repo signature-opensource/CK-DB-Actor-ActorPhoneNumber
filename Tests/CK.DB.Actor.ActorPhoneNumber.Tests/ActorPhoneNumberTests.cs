@@ -89,7 +89,7 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
             var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
-                // We need a connection that stays Opened because we are playing with begin tran/rollback accross queries.
+                // We need a connection that stays Opened because we are playing with begin tran/rollback across queries.
                 ctx[phoneNumbers.Database].PreOpen();
 
                 var uniquePhoneNumber = UniqueLocalPhoneNumber().Substring( 0, 9 );
