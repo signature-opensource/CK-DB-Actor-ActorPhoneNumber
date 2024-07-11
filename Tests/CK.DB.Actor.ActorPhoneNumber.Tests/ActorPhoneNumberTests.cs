@@ -5,7 +5,7 @@ using CK.Core;
 using CK.SqlServer;
 using FluentAssertions;
 using NUnit.Framework;
-using static CK.Testing.DBSetupTestHelper;
+using static CK.Testing.MonitorTestHelper;
 
 namespace CK.DB.Actor.ActorPhoneNumber.Tests
 {
@@ -15,7 +15,7 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void adding_and_removing_one_phone_number_to_System()
         {
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
                 phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
@@ -34,8 +34,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void first_phone_number_is_automatically_primary_but_the_first_valid_one_is_elected()
         {
-            var group = TestHelper.StObjMap.StObjs.Obtain<GroupTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var group = SharedEngine.Map.StObjs.Obtain<GroupTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
                 var gId = group.CreateGroup( ctx, 1 );
@@ -63,8 +63,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void when_removing_the_primary_phone_number_another_one_is_elected_even_if_they_are_all_not_validated()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
                 var uId = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
@@ -85,8 +85,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void PhoneNumber_unicity_can_be_dropped_if_needed()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
                 // We need a connection that stays Opened because we are playing with begin tran/rollback across queries.
@@ -143,8 +143,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void when_removing_the_primary_phone_number_the_most_recently_validated_is_elected()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
                 var uId = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
@@ -167,8 +167,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void adding_and_removing_phone_number_with_prefix()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber = UniqueInternationalPhoneNumber();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
@@ -199,8 +199,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void adding_and_removing_phone_number_with_prefix_and_country_code()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber = UniqueInternationalPhoneNumber();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
@@ -230,8 +230,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void adding_and_removing_phone_number_with_country_code()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber = UniqueInternationalPhoneNumber().Substring( 2 );
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
@@ -261,8 +261,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void phone_number_unicity()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber1 = UniqueInternationalPhoneNumber();
             string uniquePhoneNumber2 = UniqueInternationalPhoneNumber();
             string uniquePhoneNumber3 = UniqueInternationalPhoneNumber();
@@ -308,8 +308,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void phone_number_unicity_when_avoid_ambiguous_phone_number()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber = UniqueInternationalPhoneNumber();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
@@ -338,8 +338,8 @@ namespace CK.DB.Actor.ActorPhoneNumber.Tests
         [Test]
         public void phone_number_unicity_when_don_t_avoid_ambiguous_phone_number()
         {
-            var user = TestHelper.StObjMap.StObjs.Obtain<UserTable>();
-            var phoneNumbers = TestHelper.StObjMap.StObjs.Obtain<ActorPhoneNumberTable>();
+            var user = SharedEngine.Map.StObjs.Obtain<UserTable>();
+            var phoneNumbers = SharedEngine.Map.StObjs.Obtain<ActorPhoneNumberTable>();
             string uniquePhoneNumber = UniqueInternationalPhoneNumber();
             using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
             {
