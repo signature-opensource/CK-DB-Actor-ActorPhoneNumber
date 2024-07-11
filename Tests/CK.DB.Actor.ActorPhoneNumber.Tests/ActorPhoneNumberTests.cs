@@ -1,10 +1,11 @@
-using System;
-using Microsoft.Data.SqlClient;
-using System.Linq;
 using CK.Core;
 using CK.SqlServer;
+using CK.Testing;
 using FluentAssertions;
+using Microsoft.Data.SqlClient;
 using NUnit.Framework;
+using System;
+using System.Linq;
 using static CK.Testing.MonitorTestHelper;
 
 namespace CK.DB.Actor.ActorPhoneNumber.Tests
