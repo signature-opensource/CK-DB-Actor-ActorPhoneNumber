@@ -1,7 +1,7 @@
 using CK.Core;
 using CK.SqlServer;
 using CK.Testing;
-using FluentAssertions;
+using Shouldly;
 using Microsoft.Data.SqlClient;
 using NUnit.Framework;
 using System;
@@ -20,15 +20,15 @@ public class ActorPhoneNumberTests
         using( var ctx = new SqlStandardCallContext( TestHelper.Monitor ) )
         {
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, 1, "33123456789", false );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
-                    .Should().Be( "33123456789" );
+                    .ShouldBe( "33123456789" );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, 1, "33123456789" );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId=1" )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
         }
     }
 
@@ -42,20 +42,20 @@ public class ActorPhoneNumberTests
             var gId = group.CreateGroup( ctx, 1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, gId, "33123456789", false );
             phoneNumbers.Database.ExecuteScalar( $"select PrimaryPhoneNumber from CK.vGroup where GroupId={gId}" )
-                .Should().Be( "33123456789" );
+                .ShouldBe( "33123456789" );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, gId, "33687654321", false );
             phoneNumbers.Database.ExecuteScalar( $"select PrimaryPhoneNumber from CK.vGroup where GroupId={gId}" )
-                .Should().Be( "33123456789" );
+                .ShouldBe( "33123456789" );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, gId, "33000000000", false );
             phoneNumbers.Database.ExecuteScalar( $"select PrimaryPhoneNumber from CK.vGroup where GroupId={gId}" )
-                .Should().Be( "33123456789" );
+                .ShouldBe( "33123456789" );
 
 
             phoneNumbers.ValidatePhoneNumber( ctx, 1, gId, "33687654321" );
             phoneNumbers.Database.ExecuteScalar( $"select PrimaryPhoneNumber from CK.vGroup where GroupId={gId}" )
-                .Should().Be( "33687654321" );
+                .ShouldBe( "33687654321" );
 
             group.DestroyGroup( ctx, 1, gId );
         }
@@ -74,11 +74,11 @@ public class ActorPhoneNumberTests
             phoneNumbers.AddPhoneNumber( ctx, 1, uId, "33323456789", true );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId, "33423456789", false );
             phoneNumbers.Database.ExecuteScalar( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId}" )
-                .Should().Be( "33323456789" );
+                .ShouldBe( "33323456789" );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId, "33323456789" );
             phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId}" )
-                .Should().Match( m => m == "33123456789" || m == "33223456789" || m == "33423456789" );
+                .ShouldBe( m => m == "33123456789" || m == "33223456789" || m == "33423456789" );
             user.DestroyUser( ctx, 1, uId );
         }
     }
@@ -95,20 +95,20 @@ public class ActorPhoneNumberTests
 
             var uniquePhoneNumber = UniqueLocalPhoneNumber().Substring( 0, 9 );
             var uId1 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
-            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "1", isPrimary: false ).Should().Be( uId1, "The 1 is the primary phone number." );
-            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", false ).Should().Be( uId1 );
-            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "1" );
-            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", true ).Should().Be( uId1, "Change the primary!" );
-            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "0" );
-            phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId1}" ).Should().Be( 2 );
+            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "1", isPrimary: false ).ShouldBe( uId1, "The 1 is the primary phone number." );
+            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", false ).ShouldBe( uId1 );
+            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).ShouldBe( uniquePhoneNumber + "1" );
+            phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber + "0", true ).ShouldBe( uId1, "Change the primary!" );
+            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).ShouldBe( uniquePhoneNumber + "0" );
+            phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId1}" ).ShouldBe( 2 );
 
             var uId2 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
-            phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "2", false ).Should().Be( uId2, "The 2 is the primary phone number." );
-            phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true ).Should().Be( uId1, "Another user => the first user id is returned and nothing is done." );
+            phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "2", false ).ShouldBe( uId2, "The 2 is the primary phone number." );
+            phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true ).ShouldBe( uId1, "Another user => the first user id is returned and nothing is done." );
             // Nothing changed for both user.
-            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).Should().Be( uniquePhoneNumber + "0" );
-            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId2}" ).Should().Be( uniquePhoneNumber + "2" );
-            phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId2}" ).Should().Be( 1 );
+            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId1}" ).ShouldBe( uniquePhoneNumber + "0" );
+            phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId2}" ).ShouldBe( uniquePhoneNumber + "2" );
+            phoneNumbers.Database.ExecuteScalar<int>( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId2}" ).ShouldBe( 1 );
 
             // Calling with avoidAmbiguousPhoneNumber = false: behavior depends on TR_CK_tActorPhoneNumber_UniquePhoneNumber constraint.
             bool isUnique = phoneNumbers.Database.ExecuteScalar( "select object_id('CK.TR_CK_tActorPhoneNumber_UniquePhoneNumber', 'TR')" ) != DBNull.Value;
@@ -117,7 +117,7 @@ public class ActorPhoneNumberTests
                 TestHelper.Monitor.Info( "CK.TR_CK_tActorPhoneNumber_UniquePhoneNumber constraint found: PhoneNumber cannot be shared among users." );
                 // We cannot use the Database helpers here since the use a brand new SqlConnection each time.
                 // We must use the SqlCallContext.
-                phoneNumbers.Invoking( m => m.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true, avoidAmbiguousPhoneNumber: false ) ).Should().Throw<SqlDetailedException>();
+                Util.Invokable( () => phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber + "0", true, avoidAmbiguousPhoneNumber: false ) ).ShouldThrow<SqlDetailedException>();
                 using( Util.CreateDisposableAction( () => ctx[phoneNumbers.Database].ExecuteNonQuery( new SqlCommand( "rollback;" ) ) ) )
                 {
                     ctx[phoneNumbers.Database].ExecuteNonQuery( new SqlCommand( "begin tran; drop trigger CK.TR_CK_tActorPhoneNumber_UniquePhoneNumber;" ) );
@@ -133,9 +133,9 @@ public class ActorPhoneNumberTests
 
             static void TestWithoutUnicityConstraint( ActorPhoneNumberTable phoneNumbers, SqlStandardCallContext ctx, string uniquePhoneNumber, int uId2 )
             {
-                phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, true, avoidAmbiguousPhoneNumber: false ).Should().Be( uId2 );
-                ctx[phoneNumbers.Database].ExecuteScalar( new SqlCommand( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId2}" ) ).Should().Be( 2 );
-                ctx[phoneNumbers.Database].ExecuteScalar( new SqlCommand( $"select count(*) from CK.tActorPhoneNumber where PhoneNumber='{uniquePhoneNumber}'" ) ).Should().Be( 2 );
+                phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, true, avoidAmbiguousPhoneNumber: false ).ShouldBe( uId2 );
+                ctx[phoneNumbers.Database].ExecuteScalar( new SqlCommand( $"select count(*) from CK.tActorPhoneNumber where ActorId={uId2}" ) ).ShouldBe( 2 );
+                ctx[phoneNumbers.Database].ExecuteScalar( new SqlCommand( $"select count(*) from CK.tActorPhoneNumber where PhoneNumber='{uniquePhoneNumber}'" ) ).ShouldBe( 2 );
             }
 
         }
@@ -175,7 +175,7 @@ public class ActorPhoneNumberTests
         {
             var uId = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId = @0;", uId )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId, uniquePhoneNumber, false, isPrefixed: true );
             phoneNumbers.Database.ExecuteScalar(
@@ -187,11 +187,11 @@ public class ActorPhoneNumberTests
                         and PrimaryPhoneNumberCountryCode is null
                         and PrimaryRawPhoneNumber = @3;",
                 uId, uniquePhoneNumber, "33", uniquePhoneNumber.Substring( 2 ) )
-                    .Should().Be( 1 );
+                    .ShouldBe( 1 );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId, uniquePhoneNumber );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId = @0;", uId )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
 
             user.DestroyUser( ctx, 1, uId );
         }
@@ -218,11 +218,11 @@ public class ActorPhoneNumberTests
                         and PrimaryPhoneNumberCountryCode = @3
                         and PrimaryRawPhoneNumber = @4;",
                 uId, uniquePhoneNumber, "33", countryCode, uniquePhoneNumber.Substring( 2 ) )
-                    .Should().Be( 1 );
+                    .ShouldBe( 1 );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId, uniquePhoneNumber );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId = @0;", uId )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
 
             user.DestroyUser( ctx, 1, uId );
         }
@@ -249,11 +249,11 @@ public class ActorPhoneNumberTests
                         and PrimaryPhoneNumberCountryCode = @3
                         and PrimaryRawPhoneNumber = @4;",
                 uId, "33" + uniquePhoneNumber, "33", countryCode, uniquePhoneNumber )
-                    .Should().Be( 1 );
+                    .ShouldBe( 1 );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId, "33" + uniquePhoneNumber );
             phoneNumbers.Database.ExecuteScalar( "select PrimaryPhoneNumber from CK.vUser where UserId = @0;", uId )
-                    .Should().Be( DBNull.Value );
+                    .ShouldBe( DBNull.Value );
 
             user.DestroyUser( ctx, 1, uId );
         }
@@ -274,28 +274,28 @@ public class ActorPhoneNumberTests
             var uId3 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber1, false, isPrefixed: true )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber2, false, isPrefixed: true, countryCode: "FR" )
-                .Should().Be( uId2 );
+                .ShouldBe( uId2 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId3, uniquePhoneNumber3, false, isPrefixed: false )
-                .Should().Be( uId3 );
+                .ShouldBe( uId3 );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber1, false, isPrefixed: true )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber1, false, isPrefixed: true, countryCode: "FR" )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber1.Substring( 2 ), false, countryCode: "FR" )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber2, false, isPrefixed: true, countryCode: "FR" )
-                .Should().Be( uId2 );
+                .ShouldBe( uId2 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber2, false, isPrefixed: true )
-                .Should().Be( uId2 );
+                .ShouldBe( uId2 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber2.Substring( 2 ), false, countryCode: "FR" )
-                .Should().Be( uId2 );
+                .ShouldBe( uId2 );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber3, false )
-                .Should().Be( uId3 );
+                .ShouldBe( uId3 );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId1, uniquePhoneNumber1 );
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId2, uniquePhoneNumber2 );
@@ -319,16 +319,16 @@ public class ActorPhoneNumberTests
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber, false, isPrefixed: true );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber, false, isPrefixed: true )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             const string countryCode = "FR";
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true, countryCode: countryCode )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber.Substring( 2 ), false, countryCode: countryCode )
-                .Should().Be( uId1 );
+                .ShouldBe( uId1 );
             phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false )
-                .Should().Be( uId2 );
+                .ShouldBe( uId2 );
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId1, uniquePhoneNumber );
             user.DestroyUser( ctx, 1, uId1 );
@@ -348,15 +348,15 @@ public class ActorPhoneNumberTests
             var uId2 = user.CreateUser( ctx, 1, Guid.NewGuid().ToString() );
 
             phoneNumbers.AddPhoneNumber( ctx, 1, uId1, uniquePhoneNumber, false, isPrefixed: true, avoidAmbiguousPhoneNumber: false );
-            phoneNumbers.Invoking( p => p.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true, avoidAmbiguousPhoneNumber: false ) )
-                .Should().Throw<Exception>();
+            Util.Invokable( () => phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true, avoidAmbiguousPhoneNumber: false ) )
+                .ShouldThrow<Exception>();
             const string countryCode = "FR";
-            phoneNumbers.Invoking( p => p.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true, countryCode: countryCode, avoidAmbiguousPhoneNumber: false ) )
-                .Should().Throw<Exception>();
-            phoneNumbers.Invoking( p => p.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber.Substring( 2 ), false, countryCode: countryCode, avoidAmbiguousPhoneNumber: false ) )
-                .Should().Throw<Exception>();
-            phoneNumbers.Invoking( p => p.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, avoidAmbiguousPhoneNumber: false ) )
-                .Should().NotThrow<Exception>();
+            Util.Invokable( () => phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, isPrefixed: true, countryCode: countryCode, avoidAmbiguousPhoneNumber: false ) )
+                .ShouldThrow<Exception>();
+            Util.Invokable( () => phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber.Substring( 2 ), false, countryCode: countryCode, avoidAmbiguousPhoneNumber: false ) )
+                .ShouldThrow<Exception>();
+            Util.Invokable( () => phoneNumbers.AddPhoneNumber( ctx, 1, uId2, uniquePhoneNumber, false, avoidAmbiguousPhoneNumber: false ) )
+                .ShouldNotThrow();
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId1, uniquePhoneNumber );
             user.DestroyUser( ctx, 1, uId1 );
