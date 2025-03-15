@@ -78,7 +78,7 @@ public class ActorPhoneNumberTests
 
             phoneNumbers.RemovePhoneNumber( ctx, 1, uId, "33323456789" );
             phoneNumbers.Database.ExecuteScalar<string>( $"select PrimaryPhoneNumber from CK.vUser where UserId={uId}" )
-                .ShouldBe( m => m == "33123456789" || m == "33223456789" || m == "33423456789" );
+                .ShouldMatch( m => m == "33123456789" || m == "33223456789" || m == "33423456789" );
             user.DestroyUser( ctx, 1, uId );
         }
     }
